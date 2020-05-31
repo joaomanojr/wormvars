@@ -44,12 +44,12 @@ SOFTWARE.
 #include "pt.h"
 
 #include "timer.h"
-#include "timer23xx.h"
+//#include "timer23xx.h"
 
 #include "crc32.h"
-#include "channelName.h"
+//#include "channelName.h"
 #include "flash.h"
-#include "filesystem.h"
+#include "wormvars.h"
 
 /* debug level */
 //#define DEBUG_LEVEL		1
