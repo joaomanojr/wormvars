@@ -1,7 +1,7 @@
 /**
 MIT License
 
-Copyright (c) 2020 Joao Rubens Santos Mano joaomanojr@gmail.com
+Copyright (c) 2020 Joao Rubens Santos Mano Junior joaomanojr@gmail.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,12 +29,11 @@ SOFTWARE.
 #include "wvars_structs.h"
 
 /* type extensions */
-#define CHANNELNAME_EXT		0
-#define PASSHASH_EXT		1
+#define CHANNELNAME_EXT 0
+#define PASSHASH_EXT 1
 
 
 extern int fs_write(u16_t blockName, u8_t blockExt, void *block_data, u8_t block_len);
 extern int fs_read(u16_t blockName, u8_t blockExt, void *block_data, u8_t block_len);
 extern void fs_init(void);
 extern PT_THREAD(fs_thread(u8_t reloc_flag));
-
