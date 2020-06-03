@@ -47,4 +47,4 @@ include_directories("${source_dir}/googletest/include"
 # Add test executable
 add_executable(test_wvars main.cc test.cc)
 
-TARGET_LINK_LIBRARIES(test_wvars libgtest wormvars)
+target_link_libraries(test_wvars libgtest wormvars)

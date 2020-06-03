@@ -8,5 +8,6 @@ project (wormvars)
 
 include_directories(include pt-1.4)
 
+add_subdirectory(flash)
 add_subdirectory(wormvars)
 add_subdirectory(test)
