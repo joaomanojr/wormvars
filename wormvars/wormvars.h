@@ -32,8 +32,15 @@ SOFTWARE.
 #define CHANNELNAME_EXT 0
 #define PASSHASH_EXT 1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-extern int fs_write(u16_t blockName, u8_t blockExt, void *block_data, u8_t block_len);
-extern int fs_read(u16_t blockName, u8_t blockExt, void *block_data, u8_t block_len);
-extern void fs_init(void);
-extern PT_THREAD(fs_thread(u8_t reloc_flag));
+int fs_write(u16_t blockName, u8_t blockExt, void *block_data, u8_t block_len);
+int fs_read(u16_t blockName, u8_t blockExt, void *block_data, u8_t block_len);
+void fs_init(void);
+PT_THREAD(fs_thread(u8_t reloc_flag));
+
+#ifdef __cplusplus
+}
+#endif

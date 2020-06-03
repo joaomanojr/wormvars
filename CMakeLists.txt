@@ -8,11 +8,5 @@ project (wormvars)
 
 include_directories(include pt-1.4)
 
-## Add wormvars as a static library
-# Declare static library
-add_library(wvars STATIC src/wormvars.c)
-
-# Specify here the include directories exported by library
-target_include_directories(wvars PUBLIC src)
-
+add_subdirectory(wormvars)
 add_subdirectory(test)

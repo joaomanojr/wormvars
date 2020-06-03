@@ -23,6 +23,7 @@ SOFTWARE.
 */
 
 #include "gtest/gtest.h"
+#include "wormvars.h"
 
 // The fixture for testing class Foo.
 class FooTest : public ::testing::Test {
@@ -50,7 +51,9 @@ protected:
 
 // using ::testing::Return;
 
-FooTest::FooTest() { }
+FooTest::FooTest() {
+    fs_init();
+}
 
 FooTest::~FooTest() {};
 
