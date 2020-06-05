@@ -22,7 +22,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#include <iostream>
 #include "gtest/gtest.h"
+#include "FlashMock.h"
+#include "flash.h"
 #include "wormvars.h"
 
 // The fixture for testing class Foo.
@@ -51,11 +54,20 @@ protected:
 
 // using ::testing::Return;
 
+
 FooTest::FooTest() {
+    // TODO(joao): improve this!!
+    FlashMock *Flash = static_cast<FlashMock *>(flash_init());
     fs_init();
+
+    std::cout << "fs_init has done " << Flash->get_read_count() << " flash_read() accesses "
+        << std::endl;
+
+    flash_finish();
 }
 
-FooTest::~FooTest() {};
+FooTest::~FooTest() {
+};
 
 void FooTest::SetUp() {};
 
