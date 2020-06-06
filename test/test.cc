@@ -28,16 +28,16 @@ SOFTWARE.
 #include "flash.h"
 #include "wormvars.h"
 
-// The fixture for testing class Foo.
-class FooTest : public ::testing::Test {
+// The fixture for testing class FlashMock
+class FlashMockTest : public ::testing::Test {
 
 protected:
 
     // You can do set-up work for each test here.
-    FooTest();
+    FlashMockTest();
 
     // You can do clean-up work that doesn't throw exceptions here.
-    virtual ~FooTest();
+    virtual ~FlashMockTest();
 
     // If the constructor and destructor are not enough for setting up
     // and cleaning up each test, you can define the following methods:
@@ -50,29 +50,36 @@ protected:
     // before the destructor).
     virtual void TearDown();
 
+protected:
+    FlashMock *flash;
 };
 
 // using ::testing::Return;
 
 
-FooTest::FooTest() {
-    // TODO(joao): improve this!!
-    FlashMock *Flash = static_cast<FlashMock *>(flash_init());
-    fs_init();
+FlashMockTest::FlashMockTest() {
+    flash = static_cast<FlashMock *>(flash_init());
 
-    std::cout << "fs_init has done " << Flash->get_read_count() << " flash_read() accesses "
-        << std::endl;
+    std::cout << "FlashMock initialized " << flash->get_read_count() << " reads."<< std::endl;
+}
 
+FlashMockTest::~FlashMockTest() {
     flash_finish();
 }
 
-FooTest::~FooTest() {
-};
+void FlashMockTest::SetUp() {}
 
-void FooTest::SetUp() {};
+void FlashMockTest::TearDown() {}
 
-void FooTest::TearDown() {};
+TEST_F(FlashMockTest, FlashMockTestRead) {
+    unsigned char dummy_buffer[32];
+    int i;
 
-TEST_F(FooTest, FooTestAllwaysWork) {
-    EXPECT_EQ(0 ,0);
+    EXPECT_EQ(flash->get_read_count(), 0);
+
+    flash->read(0x0F4000, dummy_buffer, sizeof(dummy_buffer));
+    EXPECT_EQ(flash->get_read_count(), 1);
+
+    for (i = 0; i < sizeof(dummy_buffer); i++)
+        EXPECT_EQ(dummy_buffer[i], 0xFF);
 }
