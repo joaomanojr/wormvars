@@ -45,6 +45,6 @@ include_directories("${source_dir}/googletest/include"
 
 
 # Add test executable
-add_executable(test_wvars main.cc test.cc)
+add_executable(test_wvars main.cc FlashMockTest.cc WormvarsTest.cc)
 
 target_link_libraries(test_wvars libgtest wormvars flash)

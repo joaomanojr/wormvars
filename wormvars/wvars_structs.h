@@ -35,7 +35,7 @@ struct st_blockHeader{
     u8_t ext : 3;
     u8_t hash;
     u16_t name;
-};
+} __attribute__((packed));
 
 struct st_fileDescriptor{
     u32_t address;

@@ -37,7 +37,7 @@ SOFTWARE.
 #include "wormvars.h"
 
 /* debug level */
-// #define DEBUG_LEVEL        1
+#define DEBUG_LEVEL        0
 #include "debug.h"
 
 #ifdef DEBUG_CONSOLE
@@ -342,7 +342,7 @@ int fs_write(u16_t blockName, u8_t blockExt, void *block_data, u8_t block_len) {
 #endif
 
     if (block_len > FS_BLOCK_SIZE - sizeof(struct st_blockHeader)) {
-        dprintf(1, "\nfs_write: block size (%d) is too long, max= %d", block_len,
+        dprintf(1, "\nfs_write: block size (%d) is too long, max= %ld", block_len,
             FS_BLOCK_SIZE - sizeof(struct st_blockHeader));
         return -1;
     }
@@ -379,7 +379,7 @@ int fs_write(u16_t blockName, u8_t blockExt, void *block_data, u8_t block_len) {
     // DEBUG_PRINT_BLOCK(write_buffer); // debug
 
     /* write to flash */
-    dprintf(1, "\nfs_write: writing h=%d %d(%d) bytes at 0x%06x.",
+    dprintf(1, "\nfs_write: writing h=%ld %d(%d) bytes at 0x%06x.",
         sizeof(struct st_blockHeader), block_len, FS_BLOCK_SIZE, Fs.curr.address[Fs.curr.sector]);
     while (flash_ready() != 1) timer_nopsleep(100);
     flash_write(Fs.curr.address[Fs.curr.sector], write_buffer, FS_BLOCK_SIZE);
@@ -461,24 +461,24 @@ void fs_init(void) {
     unsigned char i, blankSector = 0, sectorAssigned = 0;
     int sectorSt;
     /* should check for header->type.block and register only one type.block... */
-    dprintf(2, "\nfs_init: initializing.");
+    dprintf(2, "fs_init: initializing.\n");
 
     for (i = 0 ; i < FS_NUM_SECTORS ; i++) {
-        dprintf(2, "\nfs_init: sector %d at 0x%06x :", i, Sector_base[i]);
+        dprintf(2, "fs_init: sector %d at 0x%06x :", i, Sector_base[i]);
         sectorSt = initFileDescriptors(i, &Fs.curr.address[i]);
         if (sectorSt < 0) {
-            dprintf(2, " there are fd's not recovered.");
+            dprintf(2, " there are fd's not recovered.\n");
         } else if (sectorSt == 0) {
-            dprintf(2, " blank sector.");
+            dprintf(2, " blank sector.\n");
             blankSector = i;
         } else if (sectorSt == 1) {
-            dprintf(2, " written sector (our \"target\").");
+            dprintf(2, " written sector (our \"target\").\n");
             Fs.curr.sector = i;
             sectorAssigned = 1;
         } else if (sectorSt == 2) {
-            dprintf(2, " full sector.");
+            dprintf(2, " full sector.\n");
         } else {
-            dprintf(2, " unknown \"good\" state %d, ignoring!", sectorSt);
+            dprintf(2, " unknown \"good\" state %d, ignoring!\n", sectorSt);
         }
     }
     /* decide where next data will go... */
@@ -602,7 +602,6 @@ PT_THREAD(fs_thread(u8_t reloc_flag)) {
                 dprintf(2, "\nfs_thread: writing fd[%d] from 0x%06x on active "
                     "sector%d 0x%06x.", Fs.reloc.fd_index,
                     Fs.fd[Fs.reloc.fd_index].address,
-                    sizeof(struct st_blockHeader),
                     Fs.curr.sector, Fs.curr.address[Fs.curr.sector]);
                 while (fs_write(Fs.reloc.fd.header.name, Fs.reloc.fd.header.ext,
                         &Fs.reloc.buffer[sizeof(struct st_blockHeader)],

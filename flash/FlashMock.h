@@ -46,6 +46,7 @@ using namespace std;
 #define FLASHMOCK_NUMSECTORS 8
 #define FLASHMOCK_FIRSTSECTOR_ADDRESS 0x0F4000
 #define FLASHMOCK_SECTOR_SIZE 0x1000
+#define FLASHMOCK_CHUNK_MAX 256
 #define FLASHMOCK_BUFFER_CHUNK_MAX 256
 
 struct flash_chunk {
@@ -93,9 +94,9 @@ class FlashMock  {
 
     bool address_to_sector(unsigned int address, int *sector);
 
-    int read_count = 0;
-    int write_count = 0;
-    int erase_count = 0;
+    int read_count;
+    int write_count;
+    int erase_count;
 
     vector<struct flash_chunk> flash[FLASHMOCK_NUMSECTORS];
 };

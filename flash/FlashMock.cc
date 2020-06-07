@@ -28,7 +28,7 @@ SOFTWARE.
 
 using namespace std;
 
-FlashMock::FlashMock() {
+FlashMock::FlashMock() : read_count(0), write_count(0), erase_count(0) {
     cout << "This is FlashMock Constructor" << endl;
 }
 
@@ -57,7 +57,7 @@ void FlashMock::read(unsigned int address, void *buffer, unsigned int size) {
         return;
     }
 
-    cout << "flash_read() sector is " << sector << endl;
+    // cout << "flash_read() sector is " << sector << endl;
     read_count++;
 
     char *c_buffer = static_cast<char *>(buffer);
@@ -78,14 +78,19 @@ void FlashMock::read(unsigned int address, void *buffer, unsigned int size) {
 void FlashMock::write(unsigned int address, void *buffer, unsigned int size) {
     int sector;
 
-    if (!address_to_sector(address, &sector)) {
-        cout << "flash_write() sector is out of range" << sector << endl;
+    if (size > FLASHMOCK_BUFFER_CHUNK_MAX) {
+        cout << "ERROR: flash_write() size " << size << " is too big." << endl;
         return;
     }
-    cout << "flash_write() sector is " << sector << endl;
 
-    if (size > FLASHMOCK_BUFFER_CHUNK_MAX) {
-        cout << "flash_write() size " << size << " is too big." << endl;
+    if (!address_to_sector(address, &sector)) {
+        cout << "ERROR: flash_write() sector is out of range" << sector << endl;
+        return;
+    }
+    // cout << "flash_write() sector is " << sector << endl;
+
+    if (flash[sector].size() > FLASHMOCK_CHUNK_MAX) {
+        cout << "ERROR: flash_write() maximum chunk hit, aborting" << endl;
         return;
     }
 
@@ -95,18 +100,21 @@ void FlashMock::write(unsigned int address, void *buffer, unsigned int size) {
     char *c_buffer = static_cast<char *>(buffer);
     this_write.address = address;
     for (auto i = 0; i < size; i++)
-        this_write.buffer.push_back(*c_buffer++);
+        if (i < this_write.buffer.size())
+            this_write.buffer[i] = *c_buffer++;
+        else 
+            this_write.buffer.push_back(*c_buffer++);
 
     flash[sector].push_back(this_write);
 
-    cout << "flash_write(" << address << ", " << buffer << ", " << size << ")" << endl;
+    // cout << "flash_write(" << address << ", " << buffer << ", " << size << ")" << endl;
 }
 
 void FlashMock::erase(unsigned int address, unsigned int num_sectors) {
     int erase_begin;
 
     if (!address_to_sector(address, &erase_begin)) {
-        cout << "flash_erase() sector is out of range: " << erase_begin << endl;
+        cout << "ERROR: flash_erase() sector is out of range: " << erase_begin << endl;
         return;
     }
 
@@ -119,7 +127,7 @@ void FlashMock::erase(unsigned int address, unsigned int num_sectors) {
         erase_count++;
     }
 
-    cout << "flash_erase(" << address << ", " << num_sectors << ")" << endl;
+    // cout << "flash_erase(" << address << ", " << num_sectors << ")" << endl;
 }
 
 // Introspection functions
@@ -129,6 +137,6 @@ int FlashMock::get_read_count() {
 int FlashMock::get_write_count() {
     return write_count;
 }
-int FlashMock::get_erase_count(){
+int FlashMock::get_erase_count() {
     return erase_count;
 }
