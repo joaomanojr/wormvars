@@ -1,0 +1,21 @@
+@startuml
+
+== initialization ==
+system -> wormvars: Call fs_init()\nCreate index for all data on FLASH
+system -> fs_thread: Call fs_thread()\non a timely basis
+
+== operation ==
+system -> wormvars : Write variable with fs_write()
+note over wormvars : Check if variable exists on index.\n- Save new value and update index.\n- Invalidate old entry.
+system <- wormvars : operation result
+system -> wormvars : Read variable with fs_read()
+note over wormvars : Check if variable exists on index.\n- Read data from FLASH.
+system <- wormvars : operation result and data
+
+== relocation ==
+fs_thread -> fs_thread : Wait until minimum\nblank sectors hit.
+note over fs_thread : Discover the most 'wormed' sector\neasier to relocate.
+note over fs_thread : Use fs_write() to relocate variables\non wormed sector.
+note over fs_thread : Erase wormed sector
+
+@enduml
