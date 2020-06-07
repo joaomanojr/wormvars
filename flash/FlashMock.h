@@ -22,22 +22,80 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+/**
+ * @file FlashMock.cc - a simple FLASH device mocking mechanism.
+ * 
+ * @brief This class mocks FLASH device using vectors to keep track of data written and allowing
+ *        user to read it back.
+ * 
+ *        It will respond to erase commands just re-initializing vectors keeping information on data
+ *        written.
+ * 
+ *        Possible overlaps, write above high sector addresses or even replaces on data written is
+ *        not taken into account and behaviour on these cases are not tested/guaranteed.
+ */
+
+#include <vector>
+#include <string>
+
+using namespace std;
+
+/*
+ * TODO(joao): This is plain hardcode, later on geometry information may be passed on initialization
+ */
+#define FLASHMOCK_NUMSECTORS 8
+#define FLASHMOCK_FIRSTSECTOR_ADDRESS 0x0F4000
+#define FLASHMOCK_SECTOR_SIZE 0x1000
+#define FLASHMOCK_BUFFER_CHUNK_MAX 256
+
+struct flash_chunk {
+    unsigned int address;
+    vector<char> buffer;
+};
+
 class FlashMock  {
 
  public:
     FlashMock();
     ~FlashMock();
 
+    /*
+     * Read flash function
+     * 
+     * @param[in]  address FLASH address to be read from
+     * @param[out] buffer  pointer to read data destination
+     * @param[in]  size    number of bytes to read
+     */
     void read(unsigned int address, void *buffer, unsigned int size);
+    /*
+     * Write flash function
+     * 
+     * @param[in] address FLASH address to be read from
+     * @param[in] buffer  pointer from to write data origin
+     * @param[in] size    number of data bytes to write
+     */
     void write(unsigned int address, void *buffer, unsigned int size);
-    void erase(unsigned int sector, unsigned int nun_sectors);
-
+    /*
+     * Erase sector at address
+     * 
+     * @param[in] address     FLASH base address corresponding to be erased
+     * @param[in] num_sectors number of sectors to be erased
+     */
+    void erase(unsigned int address, unsigned int num_sectors);
+    /*
+     * Introspection functions - used to monitor FLASH use statistics.
+     */
     int get_read_count();
     int get_write_count();
     int get_erase_count();
 
  private:
+
+    bool address_to_sector(unsigned int address, int *sector);
+
     int read_count = 0;
     int write_count = 0;
     int erase_count = 0;
+
+    vector<struct flash_chunk> flash[FLASHMOCK_NUMSECTORS];
 };

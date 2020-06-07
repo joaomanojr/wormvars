@@ -9,7 +9,7 @@ void flash_finish(void);
 
 void flash_read(unsigned int address, void *buffer, unsigned int size);
 void flash_write(unsigned int address, void *buffer, unsigned int size);
-void flash_erase(unsigned int sector, unsigned int nun_sectors);
+void flash_erase(unsigned int address, unsigned int num_sectors);
 int flash_ready(void);
 
 #ifdef __cplusplus

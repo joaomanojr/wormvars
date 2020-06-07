@@ -71,15 +71,30 @@ void FlashMockTest::SetUp() {}
 
 void FlashMockTest::TearDown() {}
 
-TEST_F(FlashMockTest, FlashMockTestRead) {
-    unsigned char dummy_buffer[32];
-    int i;
+TEST_F(FlashMockTest, FlashMockTestBasicAccess) {
+
+    unsigned char test_in[32] = {0, 1, 2, 3, 4};
+    unsigned char dummy_buffer[32] = {0};
 
     EXPECT_EQ(flash->get_read_count(), 0);
 
-    flash->read(0x0F4000, dummy_buffer, sizeof(dummy_buffer));
+    flash->write(0x0F4000, test_in, 5);
+    flash->read(0x0F4000, dummy_buffer, 5);
     EXPECT_EQ(flash->get_read_count(), 1);
 
-    for (i = 0; i < sizeof(dummy_buffer); i++)
+    for (auto i = 0; i < 5; i++)
+        EXPECT_EQ(dummy_buffer[i], test_in[i]);
+
+    flash->read(0x0F5000, dummy_buffer, sizeof(dummy_buffer));
+    EXPECT_EQ(flash->get_read_count(), 2);
+
+    for (auto i = 0; i < sizeof(dummy_buffer); i++)
+        EXPECT_EQ(dummy_buffer[i], 0xFF);
+
+    flash->erase(0x0F4000, 2);
+    flash->read(0x0F4000, dummy_buffer, 5);
+    EXPECT_EQ(flash->get_read_count(), 3);
+
+    for (auto i = 0; i < 5; i++)
         EXPECT_EQ(dummy_buffer[i], 0xFF);
 }

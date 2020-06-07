@@ -30,9 +30,9 @@ void flash_write(unsigned int address, void *buffer, unsigned int size)
 }
 
 /*****************************************************************************/
-void flash_erase(unsigned int sector, unsigned int num_sectors)
+void flash_erase(unsigned int address, unsigned int num_sectors)
 {
-    Flash->erase(sector, num_sectors);
+    Flash->erase(address, num_sectors);
 }
 
 /*****************************************************************************/
