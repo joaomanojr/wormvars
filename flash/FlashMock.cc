@@ -96,16 +96,29 @@ void FlashMock::write(unsigned int address, void *buffer, unsigned int size) {
 
     write_count++;
 
-    struct flash_chunk this_write;
     char *c_buffer = static_cast<char *>(buffer);
-    this_write.address = address;
-    for (auto i = 0; i < size; i++)
-        if (i < this_write.buffer.size())
-            this_write.buffer[i] = *c_buffer++;
-        else 
-            this_write.buffer.push_back(*c_buffer++);
+    for (auto &chunk : flash[sector]) {
+        if (chunk.address == address) {
+            /* Must reuse existing chunk */
+            for (auto i = 0; i < size; i++)
+                if (i < chunk.buffer.size())
+                    chunk.buffer[i] = *c_buffer++;
+                else
+                    chunk.buffer.push_back(*c_buffer++);
+            return;
+        }
+    }
 
-    flash[sector].push_back(this_write);
+    /* Create a new chunk */
+    struct flash_chunk new_chunk;
+    new_chunk.address = address;
+    for (auto i = 0; i < size; i++)
+        if (i < new_chunk.buffer.size())
+            new_chunk.buffer[i] = *c_buffer++;
+        else
+            new_chunk.buffer.push_back(*c_buffer++);
+
+    flash[sector].push_back(new_chunk);
 
     // cout << "flash_write(" << address << ", " << buffer << ", " << size << ")" << endl;
 }

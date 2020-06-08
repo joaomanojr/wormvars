@@ -82,18 +82,13 @@ TEST_F(WormvarsTest, WriteAndRead) {
     snprintf(buffer_in, sizeof(buffer_in), "%s", "test");
     EXPECT_EQ(fs_write(block1_name, block1_ext, buffer_in, strlen(buffer_in)+1), 0);
     EXPECT_EQ(fs_read(block1_name, block1_ext, buffer_out, strlen(buffer_in)+1), 0);
-    cout << "buffer_out is " << buffer_out << endl << endl;
+    cout << "buffer_out is " << buffer_out << endl;
     EXPECT_EQ(strcmp(buffer_in, buffer_out), 0);
     fs_thread(0);
 
-#if 0
-    /* TODO(joao): This is not working as it ought to be - returning "wormvars"
-     * Verify that variable is retrieved after 'reboot' also
-     */
+    /* Verify that variable is retrieved after 'reboot' also */
     fs_init();
-
     EXPECT_EQ(fs_read(block1_name, block1_ext, buffer_out, strlen(buffer_in)+1), 0);
     cout << "'reboot' and buffer_out is " << buffer_out << endl;
     EXPECT_EQ(strcmp(buffer_in, buffer_out), 0);
-#endif
 }

@@ -21,7 +21,7 @@
 
 # How to use it on your system:
 
-  Basically you will need to build and satisfy dependencies for sources under **wormvars** directory.
+  Basically you will need to build and satisfy dependencies for sources under **wormvars** directory, check **include** directory also. It will be needed to poll fs_thread() (fs_thread(0) to be precise) from your code main loop allowing it to do its relocation using flash_ready() as semaphore-like barrier to FLASH device access.
 
   Take a look into FLASH definitions at wormvars.c, it current runs on a 8 4k sized sector pool with a minimum of 2 blank sectors available at anytime:
 
@@ -51,7 +51,6 @@
   };
   ```
 
-  It will be needed also to provide implementation for all headers on **include** subdirectory.
 
 
 # Historical overview:

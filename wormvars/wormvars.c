@@ -37,7 +37,7 @@ SOFTWARE.
 #include "wormvars.h"
 
 /* debug level */
-#define DEBUG_LEVEL        0
+// #define DEBUG_LEVEL        0
 #include "debug.h"
 
 #ifdef DEBUG_CONSOLE
