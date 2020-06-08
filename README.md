@@ -1,12 +1,12 @@
 # wormvars
 
-  Wormvars is allows smart use of FLASH sectors to hold non-volatile variables on small microcontrolers systems.
+  Wormvars allows smart use of FLASH sectors to hold non-volatile variables on small microcontrolers systems.
 
 ![wormvars](uml/wormvars.png)
 
   On boottime fs_init() all FLASH sectors are accounted so an index is built allowing fast access to variables only when information is actually needed saving RAM space.
 
-  Basically what it does is to control a set of FLASH sectors allowing user to save variables setting its ID - a name composed of 16 bits and an extension composed of 3 bits.
+  Basically what it does is to control a set of FLASH sectors allowing user to save variables setting its ID - a name composed of 16 bits and an extension composed of 3 bits. It is recommended to keep extension as zero as it meant to be used to extend default variable blocksize.
   
   When fs_write() is issued index is checked to update reference to new FLASH offset or to create a new entry. After new value is saved older one is marked as invalid so on reboot fs_init() knows which value is newer.
   
@@ -21,10 +21,13 @@
 
 # How to use it on your system:
 
-  Basically you will need to build and satisfy dependencies for sources under **wormvars** directory, check **include** directory also. It will be needed to poll fs_thread() (fs_thread(0) to be precise) from your code main loop allowing it to do its relocation using flash_ready() as semaphore-like barrier to FLASH device access.
+  Basically you will need to build and satisfy dependencies for sources under **wormvars** directory, check **include** directory also - notably flash, timers and crc32 routines.
 
-  Take a look into FLASH definitions at wormvars.c, it current runs on a 8 4k sized sector pool with a minimum of 2 blank sectors available at anytime:
+  Note that your system as a whole doesn't need to use Protothreads: they were used just to ease code writing and as it were already used on system when this module were first designed. Just polling fs_thread() (fs_thread(0) to be precise) from your code main loop allowing it to do its relocation using flash_ready() as semaphore-like barrier to FLASH device access will suffice.
+  
+  Take a look into FLASH definitions at wormvars.c, it current runs on a 8 sectors with 4096 bytes. The minimum of 2 blank sectors is defined to avoid unnecessary relocation while giving some space for it to occur as some variables will need to be relocated to allow sector erases:
 
+**wormvars**
   ``` c
   #define FS_MIN_BLANKSECTORS 2
 
@@ -49,17 +52,23 @@
       FILESYSTEM_SECTOR_6,
       FILESYSTEM_SECTOR_7
   };
-  ```
+```
 
+Another important parameter is the maximum variables to be held on FLASH. More variables will imply in more RAM used and more FLASH sectors needed obviously:
+
+**wormvars_structs.h**
+  ``` c
+  #define FD_MAX 300
+  ```
 
 
 # Historical overview:
 
- This code is originally developed using 'dprintf oriented development' were originally built using WINARM suite by Martin Thomas using Linux and Code Sourcery GCC 4.11 on a baremetal system.
+ This code is originally developed using 'dprintf oriented development' were originally built using WINARM (http://www.siwawi.arubi.uni-kl.de/avr_projects/arm_projects/#winarm , unfortunatelly a broken link nowadays) suite by Martin Thomas on Linux with GCC 4.11 - probably from Code Sourcery - on a baremetal system. 
 
- It were run on a ARM7 NXP LPC2368 controller and used to store general configuration data on FLASH regarding some user defined string names and custom initialization parameters.
+ It were run on a ARM7 NXP LPC2368 controller and used to store general configuration data on FLASH regarding some user defined small string names and custom initialization parameters packed as structures. It replaces use of E2PROM with advantages of extended size and better scalability.
 
- After a while it is still reported to running realiably so I decided to share it with others and improve my code testing skills along. After some tests are running the ideia is to improve it and provide better integration on new targets.
+ After a while it is still reported to running realiably so I decided to share it with others and improve my code testing skills along.
 
 # Further work:
 
@@ -74,6 +83,7 @@
   to make older invalid.
 - Download protothreads via cmake as done with gtest.
 - Parameterize wormvars more on FLASH sectors amount, size and addresses.
+- Provide better integration on new targets.
 - Create an example application showing how to use wormvars.
 - Give up after a while (time TBD) on writing flash sectors.
 - Multi-block variable support.
