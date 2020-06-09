@@ -21,7 +21,7 @@
 
 # How to use it on your system:
 
-  Basically you will need to build and satisfy dependencies for sources under **wormvars** directory, check **include** directory also - notably flash, timers and crc32 routines.
+  Basically you will need to build and satisfy dependencies for main source under **wormvars** directory, see **ll_mock** directory to check what need to be implemented/wrapped into your system low level HAL functions.
 
   Note that your system as a whole doesn't need to use Protothreads: they were used just to ease code writing and as it were already used on system when this module were first designed. Just polling fs_thread() (fs_thread(0) to be precise) from your code main loop allowing it to do its relocation using flash_ready() as semaphore-like barrier to FLASH device access will suffice.
   
