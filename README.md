@@ -27,7 +27,7 @@
   
   Take a look into FLASH definitions at wormvars.c, it current runs on a 8 sectors with 4096 bytes. The minimum of 2 blank sectors is defined to avoid unnecessary relocation while giving some space for it to occur as some variables will need to be relocated to allow sector erases:
 
-**wormvars**
+**wormvars.c**
   ``` c
   #define FS_MIN_BLANKSECTORS 2
 

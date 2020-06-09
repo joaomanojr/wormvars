@@ -102,7 +102,10 @@ void FlashMock::write(unsigned int address, void *buffer, unsigned int size) {
             /* Must reuse existing chunk */
             for (auto i = 0; i < size; i++)
                 if (i < chunk.buffer.size())
-                    chunk.buffer[i] = *c_buffer++;
+                    /* This mocks FLASH behaviour more accurately - we can only write zeroes on an
+                     * already written offset.
+                     */
+                    chunk.buffer[i] &= *c_buffer++;
                 else
                     chunk.buffer.push_back(*c_buffer++);
             return;

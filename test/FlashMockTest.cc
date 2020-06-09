@@ -127,49 +127,18 @@ TEST_F(FlashMockTest, EraseMidSector) {
         EXPECT_EQ(dummy_buffer[i], test_in[i+4]);
 }
 
-#if 0
-// The fixture for testing wormvars
-class WormvarsTest : public ::testing::Test {
+TEST_F(FlashMockTest, RewriteOffset) {
+    const unsigned int offset = FLASH_SECTOR_TO_ADDR(2) + 64;
+    unsigned char test_in0[] = {0xFF, 0xF0, 0x0F, 0x00};
+    unsigned char test_in1[] = {0x55, 0xAA, 0xBB, 0xFF};
+    unsigned char dummy_buffer[4] = {0};
 
-protected:
+    /* write some data on offset, then write again new data on same offset. */
+    flash->write(offset, test_in0, 4);
+    flash->write(offset, test_in1, 4);
 
-    // You can do set-up work for each test here.
-    WormvarsTest();
-
-    // You can do clean-up work that doesn't throw exceptions here.
-    virtual ~WormvarsTest();
-
-    // If the constructor and destructor are not enough for setting up
-    // and cleaning up each test, you can define the following methods:
-
-    // Code here will be called immediately after the constructor (right
-    // before each test).
-    virtual void SetUp();
-
-    // Code here will be called immediately after each test (right
-    // before the destructor).
-    virtual void TearDown();
-
-protected:
-    FlashMock *flash;
-};
-
-WormvarsTest::WormvarsTest() {
-    flash = static_cast<FlashMock *>(flash_init());
+    /* read data corresponds to zeroed bits on the two patterns: saying another way an AND mask */
+    flash->read(offset, dummy_buffer, 4);
+    for (auto i = 0; i < 4; i++)
+        EXPECT_EQ(dummy_buffer[i], test_in0[i] & test_in1[i]);
 }
-
-WormvarsTest::~WormvarsTest() {
-    flash_finish();
-}
-
-void WormvarsTest::SetUp() {
-}
-
-void WormvarsTest::TearDown() {
-}
-
-
-TEST_F(WormvarsTest, AlwaysPass) {
-    EXPECT_EQ(0, 0);
-}
-#endif

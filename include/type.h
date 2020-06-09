@@ -7,8 +7,4 @@
 #define u16_t unsigned short
 #define u32_t unsigned int
 
-struct timer {
-    int dummy;
-};
-
 #endif
