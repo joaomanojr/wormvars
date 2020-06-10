@@ -1,4 +1,4 @@
-/* CRC32 used here never detect any error on data written to FLASH. 
+/* CRC32 function do-nothing mock stub
  *
  * This is unsafe for use in real life hardware that can be powered off anytime during FLASH write
  * accesses - please use some implementation here like one provided by zlib or a microcontroler

@@ -68,7 +68,7 @@ void WormvarsTest::TearDown() {
 
 TEST_F(WormvarsTest, WriteAndRead) {
     u16_t block1_name = 0x0100;
-    u16_t block1_ext = 0x03;
+    u16_t block1_ext = 3;
     char buffer_in[10], buffer_out[10];
 
     /* Write a string (and its \0) onto variable and read it back */
@@ -91,4 +91,87 @@ TEST_F(WormvarsTest, WriteAndRead) {
     EXPECT_EQ(fs_read(block1_name, block1_ext, buffer_out, strlen(buffer_in)+1), 0);
     cout << "'reboot' and buffer_out is " << buffer_out << endl;
     EXPECT_EQ(strcmp(buffer_in, buffer_out), 0);
+}
+
+
+TEST_F(WormvarsTest, MassiveWriteAndRead) {
+    unsigned char buffer_in[16];
+    unsigned char buffer_out[16];
+    u16_t block1_name = 0x0100;
+    u16_t block1_ext = 0;
+
+    /* Create 64 variables with different contents */
+    for (auto offset = 0; offset < 64 ; offset++) {
+        u16_t var_name = block1_name + offset;
+        for (auto i = 0; i < sizeof(buffer_in); i++)
+            buffer_in[i] = offset + i;
+        EXPECT_EQ(fs_write(var_name, block1_ext, buffer_in, sizeof(buffer_in)), 0);
+    }
+
+    /* Write 16 first variables in a product of 16 -- will bump other vars around */
+    for (auto bump = 0; bump < 16384 ; bump++) {
+        u16_t var_name = block1_name + (bump % 16);
+        memset(buffer_in, static_cast<unsigned char>(bump), sizeof(buffer_in));
+        EXPECT_EQ(fs_write(var_name, block1_ext, buffer_in, sizeof(buffer_in)), 0);
+
+        /* This is just a naive initial guess on relocation needs as each sector is
+         * filled (128 offsets * 32 bytes = 4096 bytes sector)
+         */
+        if (bump % 128) {
+            fs_thread(0);
+        }
+    }
+
+    /* Check contents of first 16 variables */
+    for (auto offset = 0; offset < 16; offset++) {
+        u16_t var_name = block1_name + offset;
+        u8_t expected = static_cast<unsigned char>(16384) - 16 + offset;
+
+        EXPECT_EQ(fs_read(var_name, block1_ext, buffer_out, sizeof(buffer_out)), 0);
+        for (auto i = 0; i < sizeof(buffer_out); i++)
+            EXPECT_EQ(buffer_out[i], expected);
+    }
+
+    /* The remainder 48 variables will hold its values after all these relocations */
+    for (auto offset = 16; offset < 64 ; offset++) {
+        u16_t var_name = block1_name + offset;
+        for (auto i = 0; i < sizeof(buffer_in); i++)
+            buffer_in[i] = offset + i;
+
+        EXPECT_EQ(fs_read(var_name, block1_ext, buffer_out, sizeof(buffer_out)), 0);
+        for (auto i = 0; i < sizeof(buffer_out); i++)
+            EXPECT_EQ(buffer_in[i], buffer_out[i]);
+    }
+
+    cout << "--- Test statistics ---" << endl;
+    cout << flash->get_write_count() << " FLASH writes." << endl;
+    cout << flash->get_read_count() << " FLASH reads." << endl;
+    cout << flash->get_erase_count() << " FLASH erases." << endl;
+
+    /* Reboot */
+    fs_init();
+
+    /* Our 64 variables must be there with same values */
+    for (auto offset = 0; offset < 16; offset++) {
+        u16_t var_name = block1_name + offset;
+        u8_t expected = static_cast<unsigned char>(16384) - 16 + offset;
+
+        EXPECT_EQ(fs_read(var_name, block1_ext, buffer_out, sizeof(buffer_out)), 0);
+        for (auto i = 0; i < sizeof(buffer_out); i++)
+            EXPECT_EQ(buffer_out[i], expected);
+    }
+    for (auto offset = 16; offset < 64 ; offset++) {
+        u16_t var_name = block1_name + offset;
+        for (auto i = 0; i < sizeof(buffer_in); i++)
+            buffer_in[i] = offset + i;
+
+        EXPECT_EQ(fs_read(var_name, block1_ext, buffer_out, sizeof(buffer_out)), 0);
+        for (auto i = 0; i < sizeof(buffer_out); i++)
+            EXPECT_EQ(buffer_in[i], buffer_out[i]);
+    }
+
+    cout << "--- Test statistics after 'reboot' ---" << endl;
+    cout << flash->get_write_count() << " FLASH writes." << endl;
+    cout << flash->get_read_count() << " FLASH reads." << endl;
+    cout << flash->get_erase_count() << " FLASH erases." << endl;
 }
