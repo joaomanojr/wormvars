@@ -4,7 +4,7 @@
 
 ![wormvars](uml/wormvars.png)
 
-  On boottime fs_init() all FLASH sectors are accounted so an index is built allowing fast access to variables only when information is actually needed saving RAM space.
+  On boot time all FLASH sectors are accounted by fs_init() and an index is built. This allows fast access to variables only when information is actually needed saving RAM space.
 
   Basically what it does is to control a set of FLASH sectors allowing user to save variables setting its ID - a name composed of 16 bits and an extension composed of 3 bits. It is recommended to keep extension as zero as it meant to be used to extend default variable blocksize.
   
@@ -23,8 +23,10 @@
 
   Basically you will need to build and satisfy dependencies for main source under **wormvars** directory, see **ll_mock** directory to check what need to be implemented/wrapped into your system low level HAL functions.
 
-  Note that your system as a whole doesn't need to use Protothreads: they were used just to ease code writing and as it were already used on system when this module were first designed. Just polling fs_thread() (fs_thread(0) to be precise) from your code main loop allowing it to do its relocation using flash_ready() as semaphore-like barrier to FLASH device access will suffice.
+  Your system as a whole doesn't need to use Protothreads. Just polling fs_thread() (fs_thread(0) to be precise) from your code main loop allowing it to do its relocations will suffice - refer to [MassiveWriteAndRead](https://github.com/joaomanojr/wormvars/blob/47dd4de3829362845266138f832232ac3b11cd98/test/WormvarsTest.cc#L97).
   
+  fs_thread() uses flash_ready() implementation as semaphore-like barrier to FLASH device access, a minimum implementation is to use actual FLASH hardware busy status. Conflicts may arise after fs_thread() begin an operation over FLASH device, there are space for improvements there...
+
   Take a look into FLASH definitions at wormvars.c, it current runs on a 8 sectors with 4096 bytes. The minimum of 2 blank sectors is defined to avoid unnecessary relocation while giving some space for it to occur as some variables will need to be relocated to allow sector erases:
 
 **wormvars.c**
@@ -72,12 +74,7 @@ Another important parameter is the maximum variables to be held on FLASH. More v
 
 # Further work:
 
-- Actually populate tests showing a functional structure.
-  - must use protothreads infrastructure.
-  - mock actual HW accesses as a static lib to be used on tests.
-- Improve documentation.
-  - add diagrams.
-  - put some examples on defragmentation.
+- Improve documentation: add examples on defragmentation.
 - Check wrote info reading again before invalidate former fd. (May be implemented on upper levels but still
   dangerous since it is up to RAM to keep info if write fails...). Better to create a wrapper to check newer info prior
   to make older invalid.
@@ -87,4 +84,3 @@ Another important parameter is the maximum variables to be held on FLASH. More v
 - Create an example application showing how to use wormvars.
 - Give up after a while (time TBD) on writing flash sectors.
 - Multi-block variable support.
-- (???) Locked sector concept: contains vital info (environment variables) and should be unlocked prior to relocation.
