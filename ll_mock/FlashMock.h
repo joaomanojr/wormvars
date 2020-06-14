@@ -89,6 +89,7 @@ class FlashMock  {
     int get_read_count();
     int get_write_count();
     int get_erase_count();
+    void print_sector_map();
 
  private:
 

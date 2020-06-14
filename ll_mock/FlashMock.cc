@@ -23,6 +23,7 @@ SOFTWARE.
 */
 
 #include <iostream>
+#include <iomanip>
 #include <cstring>
 #include "FlashMock.h"
 
@@ -150,9 +151,21 @@ void FlashMock::erase(unsigned int address, unsigned int num_sectors) {
 int FlashMock::get_read_count() {
     return read_count;
 }
+
 int FlashMock::get_write_count() {
     return write_count;
 }
+
 int FlashMock::get_erase_count() {
     return erase_count;
+}
+
+void FlashMock::print_sector_map() {
+    cout << "-------------------------------------------------" << endl;
+    cout << "|  0  |  1  |  2  |  3  |  4  |  5  |  6  |  7  |" << endl;
+    cout << "-------------------------------------------------" << endl;
+    for (auto &it : flash)
+        cout << "| " << setw(3) << it.size() << " ";
+    cout << "|" << endl;
+    cout << "-------------------------------------------------" << endl;
 }

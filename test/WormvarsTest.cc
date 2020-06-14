@@ -108,8 +108,10 @@ TEST_F(WormvarsTest, MassiveWriteAndRead) {
         EXPECT_EQ(fs_write(var_name, block1_ext, buffer_in, sizeof(buffer_in)), 0);
     }
 
+    flash->print_sector_map();
+
     /* Write 16 first variables in a product of 16 -- will bump other vars around */
-    for (auto bump = 0; bump < 16384 ; bump++) {
+    for (auto bump = 0; bump < 2048 ; bump++) {
         u16_t var_name = block1_name + (bump % 16);
         memset(buffer_in, static_cast<unsigned char>(bump), sizeof(buffer_in));
         EXPECT_EQ(fs_write(var_name, block1_ext, buffer_in, sizeof(buffer_in)), 0);
@@ -117,15 +119,16 @@ TEST_F(WormvarsTest, MassiveWriteAndRead) {
         /* This is just a naive initial guess on relocation needs as each sector is
          * filled (128 offsets * 32 bytes = 4096 bytes sector)
          */
-        if (bump % 128) {
+        if (bump % 128 == 0) {
             fs_thread(0);
+            flash->print_sector_map();
         }
     }
 
     /* Check contents of first 16 variables */
     for (auto offset = 0; offset < 16; offset++) {
         u16_t var_name = block1_name + offset;
-        u8_t expected = static_cast<unsigned char>(16384) - 16 + offset;
+        u8_t expected = static_cast<unsigned char>(2048) - 16 + offset;
 
         EXPECT_EQ(fs_read(var_name, block1_ext, buffer_out, sizeof(buffer_out)), 0);
         for (auto i = 0; i < sizeof(buffer_out); i++)
@@ -147,6 +150,8 @@ TEST_F(WormvarsTest, MassiveWriteAndRead) {
     cout << flash->get_write_count() << " FLASH writes." << endl;
     cout << flash->get_read_count() << " FLASH reads." << endl;
     cout << flash->get_erase_count() << " FLASH erases." << endl;
+
+    flash->print_sector_map();
 
     /* Reboot */
     fs_init();
@@ -174,4 +179,6 @@ TEST_F(WormvarsTest, MassiveWriteAndRead) {
     cout << flash->get_write_count() << " FLASH writes." << endl;
     cout << flash->get_read_count() << " FLASH reads." << endl;
     cout << flash->get_erase_count() << " FLASH erases." << endl;
+
+    flash->print_sector_map();
 }
