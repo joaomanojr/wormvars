@@ -621,7 +621,7 @@ PT_THREAD(fs_thread(u8_t reloc_flag)) {
     PT_WAIT_WHILE(&Fs.pt, flash_ready() != 1);
     dprintf(2, "\nfs_thread: erasing sector %d (0x%06x).", Fs.reloc.sector,
         Sector_base[Fs.reloc.sector]);
-    flash_erase(Sector_base[Fs.reloc.sector] & ~(0xFFF) , 4);
+    flash_erase(Sector_base[Fs.reloc.sector]);
 
     /* Initialize sector current pointer */
     Fs.curr.address[Fs.reloc.sector]= Sector_base[Fs.reloc.sector];

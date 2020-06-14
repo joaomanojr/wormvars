@@ -107,7 +107,9 @@ TEST_F(FlashMockTest, EraseMidSector) {
     EXPECT_EQ(flash->get_write_count(), 4);
 
     /* Erase sectors 2 and 3 */
-    flash->erase(second_offset, 2);
+    flash->erase(second_offset);
+    EXPECT_EQ(flash->get_erase_count(), 1);
+    flash->erase(third_offset);
     EXPECT_EQ(flash->get_erase_count(), 2);
 
     /* Sectors 2 and 3 are erased */

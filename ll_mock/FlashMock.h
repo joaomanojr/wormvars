@@ -79,10 +79,9 @@ class FlashMock  {
     /*
      * Erase sector at address
      * 
-     * @param[in] address     FLASH base address corresponding to be erased
-     * @param[in] num_sectors number of sectors to be erased
+     * @param[in] sector_address  FLASH base address corresponding to be erased
      */
-    void erase(unsigned int address, unsigned int num_sectors);
+    void erase(unsigned int sector_address);
     /*
      * Introspection functions - used to monitor FLASH use statistics.
      */
