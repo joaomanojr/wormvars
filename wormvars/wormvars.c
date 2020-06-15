@@ -333,7 +333,7 @@ static int updateSector(void) {
 }
 
 /*****************************************************************************/
-int fs_write(u16_t blockName, u8_t blockExt, void *block_data, u8_t block_len) {
+int fs_write(u16_t blockName, u8_t blockExt, const void *block_data, u8_t block_len) {
     struct st_blockHeader *p_blockHeader;
     u8_t write_buffer[FS_BLOCK_SIZE]={0xFF};
     u16_t i;

@@ -23,6 +23,7 @@ SOFTWARE.
 */
 
 #include <iostream>
+#include <algorithm>
 #include "gtest/gtest.h"
 #include "FlashMock.h"
 #include "flash.h"
@@ -94,64 +95,79 @@ TEST_F(WormvarsTest, WriteAndRead) {
 }
 
 
+#define kVarLength 28
+#if kVarLength > 28
+#error kVarLength must be 28 maximum: 32 bytes cell, header overhead is 4
+#endif
+
+#define kVarTotal 64
+#define kVarBumped 16
+#if kVarBumped > kVarTotal
+#error kVarBumped must be less or equal of total variables
+#endif
+
+/* This is just a naive initial guess on relocation needs as each sector is filled
+ * (128 offsets * 32 bytes = 4096 bytes sector). Notice that values greater than that may
+ * result on stavation since currently only one wormed sector is freed at a time...
+ */
+#define kFsThreadBumps 128   // Number of bumps until call fs_thread()
+#define kNumberOfBumps 10000
+
 TEST_F(WormvarsTest, MassiveWriteAndRead) {
-    unsigned char buffer_in[16];
-    unsigned char buffer_out[16];
     u16_t block1_name = 0x0100;
     u16_t block1_ext = 0;
+    vector <string> variables;
 
-    /* Create 64 variables with different contents */
-    for (auto offset = 0; offset < 64 ; offset++) {
+    /* https://stackoverflow.com/questions/440133/\
+     * how-do-i-create-a-random-alpha-numeric-string-in-c
+     */
+    auto randchar = []() -> char {
+        const char charset[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+        const size_t max_index = (sizeof(charset) - 1);
+        return charset[ rand() % max_index ];
+    };
+
+    string new_variable(kVarLength, 0);
+    auto randvar = [=](string &new_variable) {
+        std::generate_n(new_variable.begin(), kVarLength, randchar);
+    };
+
+    /* Create kVarTotal variables with different contents */
+    for (auto offset = 0; offset < kVarTotal ; offset++) {
         u16_t var_name = block1_name + offset;
-        for (auto i = 0; i < sizeof(buffer_in); i++)
-            buffer_in[i] = offset + i;
-        EXPECT_EQ(fs_write(var_name, block1_ext, buffer_in, sizeof(buffer_in)), 0);
+        // create randomic content
+        randvar(new_variable);
+        variables.push_back(new_variable);
+        EXPECT_EQ(fs_write(var_name, block1_ext, new_variable.c_str(), kVarLength), 0);
     }
 
-    flash->print_sector_map();
+    // flash->print_sector_map();
 
-    /* check 1217... */
-    /* Write 16 first variables in a product of 16 -- will bump other vars around */
-    for (auto bump = 0; bump < 2048 ; bump++) {
-        u16_t var_name = block1_name + (bump % 16);
-        memset(buffer_in, static_cast<unsigned char>(bump), sizeof(buffer_in));
-        EXPECT_EQ(fs_write(var_name, block1_ext, buffer_in, sizeof(buffer_in)), 0);
+    for (auto bump = 0; bump < kNumberOfBumps; bump++) {
+        u16_t var_name = block1_name + (bump % kVarBumped);
+        // create randomic content and overwrite prior generated contents
+        randvar(new_variable);
+        variables[bump % kVarBumped] = new_variable;
+        EXPECT_EQ(fs_write(var_name, block1_ext, new_variable.c_str(), kVarLength), 0);
 
-        flash->print_sector_map();
-        cout << flash->get_erase_count() << "erases issued." << endl;
+        // flash->print_sector_map();
 
-        /* This is just a naive initial guess on relocation needs as each sector is
-         * filled (128 offsets * 32 bytes = 4096 bytes sector)
-         */
-        if (bump % 128 == 0) {
+        if (bump % kFsThreadBumps == 0) {
             fs_thread(0);
-            cout << "bump is " << bump << endl;
+            // cout << "bump is " << bump << endl;
         }
     }
-#if 0
-    /* Check contents of first 16 variables */
-    for (auto offset = 0; offset < 16; offset++) {
+
+    /* Check contents of all kVarTotal variables */
+    for (auto offset = 0; offset < kVarTotal; offset++) {
         u16_t var_name = block1_name + offset;
-        u8_t expected = static_cast<unsigned char>(1217) - 16 + offset;
+        char buffer_out[kVarLength];
 
-        EXPECT_EQ(fs_read(var_name, block1_ext, buffer_out, sizeof(buffer_out)), 0);
-        for (auto i = 0; i < sizeof(buffer_out); i++)
-            EXPECT_EQ(buffer_out[i], expected);
+        EXPECT_EQ(fs_read(var_name, block1_ext, buffer_out, kVarLength), 0);
+
+        string read_data(buffer_out, kVarLength);
+        EXPECT_EQ(read_data, variables[offset]);
     }
-#endif
-
-#if 0
-    /* The remainder 48 variables will hold its values after all these relocations */
-    for (auto offset = 16; offset < 64 ; offset++) {
-        u16_t var_name = block1_name + offset;
-        for (auto i = 0; i < sizeof(buffer_in); i++)
-            buffer_in[i] = offset + i;
-
-        EXPECT_EQ(fs_read(var_name, block1_ext, buffer_out, sizeof(buffer_out)), 0);
-        for (auto i = 0; i < sizeof(buffer_out); i++)
-            EXPECT_EQ(buffer_in[i], buffer_out[i]);
-    }
-#endif
 
     cout << "--- Test statistics ---" << endl;
     cout << flash->get_write_count() << " FLASH writes." << endl;
@@ -160,27 +176,18 @@ TEST_F(WormvarsTest, MassiveWriteAndRead) {
 
     flash->print_sector_map();
 
-#if 0
     /* Reboot */
     fs_init();
 
-    /* Our 64 variables must be there with same values */
-    for (auto offset = 0; offset < 16; offset++) {
+    /* Check contents of kVarTotal variables */
+    for (auto offset = 0; offset < kVarTotal; offset++) {
         u16_t var_name = block1_name + offset;
-        u8_t expected = static_cast<unsigned char>(1217) - 16 + offset;
+        char buffer_out[kVarLength];
 
-        EXPECT_EQ(fs_read(var_name, block1_ext, buffer_out, sizeof(buffer_out)), 0);
-        for (auto i = 0; i < sizeof(buffer_out); i++)
-            EXPECT_EQ(buffer_out[i], expected);
-    }
-    for (auto offset = 16; offset < 64 ; offset++) {
-        u16_t var_name = block1_name + offset;
-        for (auto i = 0; i < sizeof(buffer_in); i++)
-            buffer_in[i] = offset + i;
+        EXPECT_EQ(fs_read(var_name, block1_ext, buffer_out, kVarLength), 0);
 
-        EXPECT_EQ(fs_read(var_name, block1_ext, buffer_out, sizeof(buffer_out)), 0);
-        for (auto i = 0; i < sizeof(buffer_out); i++)
-            EXPECT_EQ(buffer_in[i], buffer_out[i]);
+        string read_data(buffer_out, kVarLength);
+        EXPECT_EQ(read_data, variables[offset]);
     }
 
     cout << "--- Test statistics after 'reboot' ---" << endl;
@@ -189,5 +196,4 @@ TEST_F(WormvarsTest, MassiveWriteAndRead) {
     cout << flash->get_erase_count() << " FLASH erases." << endl;
 
     flash->print_sector_map();
-#endif
 }
