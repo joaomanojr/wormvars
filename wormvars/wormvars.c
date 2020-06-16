@@ -495,7 +495,7 @@ void fs_init(void) {
 /*****************************************************************************/
 inline static int findRelocSector(u8_t *reloc_sector) {
     u8_t blankSectors = 0;
-    u8_t sector, fd_min, reloc = 0;
+    u8_t new_sector, sector, fd_min, reloc = 0;
     u16_t fd;
     struct {
         u8_t fd_count;
@@ -534,12 +534,13 @@ inline static int findRelocSector(u8_t *reloc_sector) {
     /* reloc "winner" will be the full sector with less active fd's */
     fd_min = FDS_PER_SECTOR;
     for (sector = 0; sector < FS_NUM_SECTORS ; sector++) {
-        dprintf(1, "\nfindRelocSector: sector %d has %d fds (%d)", sector,
-            reloc_map[sector].fd_count, reloc_map[sector].full);
-        if (reloc_map[sector].full == 1 && reloc_map[sector].fd_count < fd_min) {
+        new_sector = (Fs.curr.sector + sector) % FS_NUM_SECTORS;
+        dprintf(1, "\nfindRelocSector: new_sector %d has %d fds (%d)", new_sector,
+            reloc_map[new_sector].fd_count, reloc_map[new_sector].full);
+        if (reloc_map[new_sector].full == 1 && reloc_map[new_sector].fd_count < fd_min) {
             dprintf(1, "(new reloc candidate).");
-            fd_min = reloc_map[sector].fd_count;
-            reloc = sector;
+            fd_min = reloc_map[new_sector].fd_count;
+            reloc = new_sector;
         }
     }
 

@@ -67,6 +67,7 @@ void WormvarsTest::SetUp() {
 void WormvarsTest::TearDown() {
 }
 
+
 TEST_F(WormvarsTest, WriteAndRead) {
     u16_t block1_name = 0x0100;
     u16_t block1_ext = 3;
@@ -95,25 +96,21 @@ TEST_F(WormvarsTest, WriteAndRead) {
 }
 
 
-#define kVarLength 28
-#if kVarLength > 28
-#error kVarLength must be 28 maximum: 32 bytes cell, header overhead is 4
-#endif
-
-#define kVarTotal 64
-#define kVarBumped 16
-#if kVarBumped > kVarTotal
-#error kVarBumped must be less or equal of total variables
-#endif
-
-/* This is just a naive initial guess on relocation needs as each sector is filled
- * (128 offsets * 32 bytes = 4096 bytes sector). Notice that values greater than that may
- * result on stavation since currently only one wormed sector is freed at a time...
- */
-#define kFsThreadBumps 128   // Number of bumps until call fs_thread()
-#define kNumberOfBumps 10000
-
 TEST_F(WormvarsTest, MassiveWriteAndRead) {
+    constexpr auto kVarLength = 28;
+    ASSERT_LE(kVarLength, 28) << "kVarLength must be <= 28: 32 bytes cell, header overhead is 4";
+
+    constexpr auto kVarTotal = 64;
+    constexpr auto kVarBumped = 16;
+    ASSERT_LE(kVarBumped, 28) << "kVarBumped must be less than kVarTotal!";
+
+    /* This is just a naive initial guess on relocation needs as each sector is filled
+     * (128 offsets * 32 bytes = 4096 bytes sector). Notice that values greater than that may
+     * result on stavation since currently only one wormed sector is freed at a time...
+     */
+    constexpr auto kFsThreadBumps = 128;  // Number of bumps until call fs_thread()
+    constexpr auto kNumberOfBumps = 10000;
+
     u16_t block1_name = 0x0100;
     u16_t block1_ext = 0;
     vector <string> variables;
@@ -141,8 +138,6 @@ TEST_F(WormvarsTest, MassiveWriteAndRead) {
         EXPECT_EQ(fs_write(var_name, block1_ext, new_variable.c_str(), kVarLength), 0);
     }
 
-    // flash->print_sector_map();
-
     for (auto bump = 0; bump < kNumberOfBumps; bump++) {
         u16_t var_name = block1_name + (bump % kVarBumped);
         // create randomic content and overwrite prior generated contents
@@ -154,7 +149,6 @@ TEST_F(WormvarsTest, MassiveWriteAndRead) {
 
         if (bump % kFsThreadBumps == 0) {
             fs_thread(0);
-            // cout << "bump is " << bump << endl;
         }
     }
 
