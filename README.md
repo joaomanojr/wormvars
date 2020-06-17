@@ -2,7 +2,7 @@
 
   Wormvars allows smart use of FLASH sectors to hold non-volatile variables on small microcontrolers systems.
 
-![wormvars](uml/wormvars.png)
+  ![wormvars](uml/wormvars.png)
 
   On boot time all FLASH sectors are accounted by fs_init() and an index is built. This allows fast access to variables only when information is actually needed saving RAM space.
 
@@ -18,6 +18,35 @@
   
   Threads are somewhat heavy for smaller systems. As of today this project uses Alan Dunkel's Protothreads (http://dunkels.com/adam/pt/) to circumvent this - in fact all we need is to keep relocation process going somehow in background. Code from protothreads v1.4 is just uncompressed on root dir under pt-1.4.
   
+# A peek under the hood
+
+  Currently each variable is stored on FLASH using a cell that is composed of a header plus data:
+
+**wvars_structs.h**
+  ``` c
+  struct st_blockHeader{
+      u8_t ver:2;    // header version (FS_VERSION(0))
+      u8_t size:2;   // header size (FS_SIZEINVALID(0), FS_SIZE32(1))
+      u8_t newer:1;  // newer flag (FS_BLOCK_CURRENT(0), FS_BLOCK_NEWER(1))
+      u8_t ext:3;    // name extension
+      u8_t hash;       // 8 bit hash of this cell
+      u16_t name;      // name
+  } __attribute__((packed));
+
+  int fs_write(u16_t blockName, u8_t blockExt, const void *block_data, u8_t block_len);
+  int fs_read(u16_t blockName, u8_t blockExt, void *block_data, u8_t block_len);
+  ```
+  
+  ![fs_write process](uml/fs_write.png)
+
+  When fs_write() is taken first tests are regarding cell size and FLASH availability.
+  
+  Assuming that already exists data on FLASH with this name/extension the very first thing then is to flag current data on FLASH as current meaning 'not newer'. Note that as newer flag is not considered on hash calculation this change will not invalidate hash for this block - this mechanism helps flagging data as obsolete while keeping it into non-volatile storage on all situations. Other trick here is use '0' to signalize FS_CURRENT as we always can write zeroes on previous used offsets;
+
+  New data is then written on FLASH with newer flag set. If there were data on same name/extension flagged as current it is time to invalidate it. This invalidation is done again writing zeroes into Flash - this time on hash protected size field on header.
+
+  If there are FDs available - it will be always the case if design were well done - FD is updated to point new offset on FLASH.
+  
 
 # How to use it on your system:
 
@@ -29,7 +58,7 @@
 
   Take a look into FLASH definitions at wormvars.c, it current runs on a 8 sectors with 4096 bytes. The minimum of 2 blank sectors is defined to avoid unnecessary relocation while giving some space for it to occur as some variables will need to be relocated to allow sector erases:
 
-**wormvars.c**
+  **wormvars.c**
   ``` c
   #define FS_MIN_BLANKSECTORS 2
 
@@ -54,11 +83,11 @@
       FILESYSTEM_SECTOR_6,
       FILESYSTEM_SECTOR_7
   };
-```
+  ```
 
-Another important parameter is the maximum variables to be held on FLASH. More variables will imply in more RAM used and more FLASH sectors needed obviously:
+  Another important parameter is the maximum variables to be held on FLASH. More variables will imply in more RAM used and more FLASH sectors needed obviously:
 
-**wormvars_structs.h**
+  **wormvars_structs.h**
   ``` c
   #define FD_MAX 300
   ```

@@ -1,0 +1,39 @@
+@startuml
+(*) --> "fs_write()"
+
+if "Variable size is too big?" then
+  -->[Error -1] (*)
+else
+
+  if "Is there room on FLASH?\nupdateSector()" then
+    if "Found FD?" then
+      -->[true] "Unset newer flag into previous\nFLASH location"
+      --> === CHECK_EXISTING_FD ===
+    else
+      -->[false] === CHECK_EXISTING_FD ===
+    endif
+
+    --> "Calculate hash over all data\nbut newer and hash fields"
+    --> "Write new data into current\nFLASH location (newer set)"
+
+    if "Existing FD?" then
+      --> [true] "Invalidate previous FLASH location\nusing FS_SIZEINVALID"
+      --> === CHECK_FD_MAX ===
+    else
+      --> [false] === CHECK_FD_MAX ===
+    endif
+
+    if "FD is within\nFD_MAX range?" then
+      --> [true] "Update FD pointing to\nnew FLASH offset"
+      -right-> [Ok 0] (*)
+    else
+      -->[Error -1 (?!?)] (*)
+    endif
+
+  else
+    -->[Error -2] (*)
+  endif
+
+endif
+
+@enduml
