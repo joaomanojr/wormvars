@@ -92,7 +92,8 @@ TEST_F(WormvarsTest, WriteAndRead) {
     fs_init();
     EXPECT_EQ(fs_read(block1_name, block1_ext, buffer_out, strlen(buffer_in)+1), 0);
     cout << "'reboot' and buffer_out is " << buffer_out << endl;
-    EXPECT_EQ(strcmp(buffer_in, buffer_out), 0);
+    /* Just an artificial error to test github action */
+    EXPECT_EQ(strcmp(buffer_in, &buffer_out[1]), 0);
 }
 
 
